@@ -4,7 +4,7 @@ if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 $plugin_info = array(
   'pi_name' => 'Gravatar',
-  'pi_version' => '2.1.2',
+  'pi_version' => '2.1.3',
   'pi_author' => 'Philip Zaengle',
   'pi_author_url' => 'http://www.philipzaengle.com/',
   'pi_description' => 'Returns gravatar URL',
@@ -44,23 +44,32 @@ var $return_data = "";
     $default = $this->EE->TMPL->fetch_param('default');
     $email = $this->EE->TMPL->fetch_param('email');
     $name = $this->EE->TMPL->fetch_param('name');
+    $use_loggedin = $this->EE->TMPL->fetch_param('use_loggedin');
     
-    if ($email == "" && $name != "")
-    {
-	  $results = $this->EE->db->query("SELECT email FROM exp_members WHERE screen_name = '".$this->EE->db->escape_str($name)."'");
-	  $results = $results->row('email');	
-	  $email = is_array($results) ? 'error@error.com' : $results;
-    }
+    if ($email == "") // If no email param...
+	{
+		if($name != "") // Use name param
+	    {
+		  $results = $this->EE->db->query("SELECT email FROM exp_members WHERE screen_name = '".$this->EE->db->escape_str($name)."'");
+		  $results = $results->row('email');	
+		  $email = is_array($results) ? 'error@error.com' : $results;
+	    }
+		elseif($use_loggedin)
+		{
+			$email = $this->EE->session->userdata('email');
+		}
+	}
+    	
 
     $grav_base = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "https://secure.gravatar.com/avatar/" : "http://www.gravatar.com/avatar/";
     $grav_url = $grav_base.md5(strtolower($email))."?";
 
 	if($size && $size != '')
-		$grav_url .="s=".$size."&";
+		$grav_url .="s=".$size."&amp;";
 	if($rating && $rating != '')
-		$grav_url .= "r=".$rating."&";
+		$grav_url .= "r=".$rating."&amp;";
 	if($default && $default != '')
-		$grav_url .= "d=".$default."&";
+		$grav_url .= "d=".$default."&amp;";
 		
 	$grav_url =	substr_replace($grav_url ,"",-1);
 		
